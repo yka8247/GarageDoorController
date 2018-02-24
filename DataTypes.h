@@ -1,41 +1,42 @@
-/**
- * Library scrapped from http://www.codeproject.com/Articles/1087619/State-Machine-Design-in-Cplusplus
- */
 #ifndef _DATA_TYPES_H
 #define _DATA_TYPES_H
 
-typedef signed char INT8;
-typedef unsigned char UINT8;
-typedef signed short INT16;
-typedef unsigned short UINT16;
-typedef unsigned int UINT32;
-typedef int INT32;
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-typedef int INT;
-typedef unsigned int UINT;
-typedef unsigned long DWORD;
-typedef unsigned char BYTE;
-typedef unsigned short WORD;
-typedef float FLOAT;
-typedef double DOUBLE;
-typedef int BOOL;
+#if WIN32
+	#include "windows.h"
+#else
+	typedef signed char INT8;
+	typedef unsigned char UINT8;
+	typedef signed short INT16;
+	typedef unsigned short UINT16;
+	typedef unsigned int UINT32;
+	typedef int INT32;
+	typedef char CHAR;
+	typedef short SHORT;
+	typedef long LONG;
+	typedef int INT;
+	typedef unsigned int UINT;
+	typedef unsigned long DWORD;
+	typedef unsigned char BYTE;
+	typedef unsigned short WORD;
+	typedef float FLOAT;
+	typedef double DOUBLE;
+	typedef int BOOL;
 
-#ifndef NULL
+	#ifndef NULL
 	#ifdef __cplusplus
-		#define NULL    0
+	#define NULL    0
 	#else
-		#define NULL    ((void *)0)
+	#define NULL    ((void *)0)
 	#endif
-#endif
+	#endif
 
-#ifndef FALSE
+	#ifndef FALSE
 	#define FALSE               0
-#endif
+	#endif
 
-#ifndef TRUE
+	#ifndef TRUE
 	#define TRUE                1
+	#endif
 #endif
 
 #endif
