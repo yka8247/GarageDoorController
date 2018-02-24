@@ -19,18 +19,18 @@ public:
 class GarageDoor : public StateMachine {
 public:
 	GarageDoor();
-	//void Init();
+	void Init();
 	void DoorUp(GarageDoorData* data);
 	void DoorDown(GarageDoorData* data);
 	void Halt();
-	void Recover();
 private:
 	INT position;
 	BOOL is_open;
 	BOOL is_operating;
 	BOOL is_closed;
 	BOOL overcurrent;
-	BOOL ir_beam;
+	BOOL ir_beam_enabled;
+	BOOL ir_triggered;
 	enum States {
 		ST_DOOR_CLOSED,
 		ST_UPWARD_OPERATION,
@@ -42,9 +42,9 @@ private:
 
 	// Define the state machine state functions with event data type
 	STATE_DECLARE(GarageDoor,	door_closed,		GarageDoorData)
-	STATE_DECLARE(GarageDoor,	upward_operation,	GarageDoorData)
+	STATE_DECLARE(GarageDoor,	upward_operation,	NoEventData)
 	STATE_DECLARE(GarageDoor,	door_open,			GarageDoorData)
-	STATE_DECLARE(GarageDoor,	downward_operation,	GarageDoorData)
+	STATE_DECLARE(GarageDoor,	downward_operation,	NoEventData)
 	STATE_DECLARE(GarageDoor,	stop, 				GarageDoorData)
 
 	/* State map to define state object order
