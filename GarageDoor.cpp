@@ -36,7 +36,7 @@ void GarageDoor::DoorUp(GarageDoorData* data) {
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_UPWARD_OPERATION
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)				// ST_STOP
+		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_STOP
 	END_TRANSITION_MAP(data)
 }
 
@@ -47,7 +47,7 @@ void GarageDoor::DoorDown(GarageDoorData* data) {
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_UPWARD_OPERATION
 		TRANSITION_MAP_ENTRY (ST_DOWNWARD_OPERATION)		// ST_DOOR_OPEN
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)				// ST_STOP
+		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_STOP
 	END_TRANSITION_MAP(data)
 }
 
@@ -59,7 +59,7 @@ void GarageDoor::Halt()
 		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_UPWARD_OPERATION
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
 		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_STOP
+		TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)				// ST_STOP
 	END_TRANSITION_MAP(NULL)
 }
 
@@ -70,44 +70,53 @@ void GarageDoor::Recover()
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_CLOSED
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_UPWARD_OPERATION
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
-		TRANSITION_MAP_ENTRY (ST_DOWNWARD_OPERATION)		// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)				// ST_STOP
+		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOWNWARD_OPERATION
+		TRANSITION_MAP_ENTRY (ST_DOWNWARD_OPERATION)		// ST_STOP
 	END_TRANSITION_MAP(NULL)
 }
 
 // state machine sits here when motor is not running
-STATE_DEFINE(GarageDoor, door_closed, NoEventData) {
+STATE_DEFINE(GarageDoor, door_closed, GarageDoorData) {
 	std::cout << "Garage Status::CLOSED" << std::endl;
-	is_operating = FALSE;
-	is_closed = TRUE;
-	position = 0;
+	is_closed = TRUE;	// set the state flag
+	while (is_closed) {
+		delay(500);		// poll every 500 ms
+		if (data->button_pushed) {
+			is_closed = FALSE;
+		}
+	}
+	InternalEvent(ST_UPWARD_OPERATION);
 }
 
 STATE_DEFINE(GarageDoor, upward_operation, GarageDoorData) {
 	std::cout << "Garage Status::UPWARD_OPERATION" << std::endl;
-	is_closed = FALSE;
-	is_operating = TRUE;
+	is_operating = TRUE;	// set the state flag
 	while (position < 10) {
 		position++;
 		delay(200);
 		std::cout << "opening..." << std::endl;
 	}
-
-	if (position == 10) {
-		InternalEvent(ST_DOOR_OPEN);
+	if (position == 0) {
+		is_operating = FALSE;			// clear the state flag
+		InternalEvent(ST_DOOR_OPEN);	// move on to the next stae
 	}
 }
 
-STATE_DEFINE(GarageDoor, door_open, NoEventData) {
+STATE_DEFINE(GarageDoor, door_open, GarageDoorData) {
 	std::cout << "Garage Status::OPEN" << std::endl;
-	is_operating = FALSE;
-	is_open = TRUE;
-	ir_beam = TRUE;
+	is_open = TRUE;			// set the state flag
+	ir_beam = TRUE;			// enable ir_beam
+	while (is_open) {
+		delay(500);			// poll every 500 ms
+		if (data->button_pushed) {
+			is_open = FALSE;
+		}
+	}
+	InternalEvent(ST_DOWNWARD_OPERATION);
 }
 
 STATE_DEFINE(GarageDoor, downward_operation, GarageDoorData) {
 	std::cout << "Garage Status::DOWNWARD_OPERATION" << std::endl;
-	is_open = FALSE;
 	is_operating = TRUE;
 	while (position >= 0) {
 		position--;
@@ -115,12 +124,19 @@ STATE_DEFINE(GarageDoor, downward_operation, GarageDoorData) {
 		std::cout << "closing..." << std::endl;
 	}
 	if (position == 0) {
-		InternalEvent(ST_DOOR_CLOSED);
+		is_operating = FALSE;				// clear the state flag
+		InternalEvent(ST_DOOR_CLOSED);		// move on to the next state
 	}
 }
 
 STATE_DEFINE(GarageDoor, stop, GarageDoorData) {
 	std::cout << "Garage Status::STOP" << std::endl;
-	is_operating = FALSE;
-	overcurrent = TRUE;
+	overcurrent = TRUE;			// set the error flag
+	while (overcurrent) {
+		delay(500);				// poll every 500 ms
+		if (!data->overcurrent) {
+			overcurrent = FALSE;
+		}
+	}
+	InternalEvent(ST_DOWNWARD_OPERATION);
 }

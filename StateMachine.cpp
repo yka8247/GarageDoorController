@@ -87,9 +87,7 @@ void StateMachine::StateEngine(void)
 //----------------------------------------------------------------------------
 void StateMachine::StateEngine(const StateMapRow* const pStateMap)
 {
-#if EXTERNAL_EVENT_NO_HEAP_DATA
 	BOOL externalEvent = TRUE;
-#endif
 	const EventData* pDataTemp = NULL;
 
 	// While events are being generated keep executing states
@@ -141,9 +139,7 @@ void StateMachine::StateEngine(const StateMapRow* const pStateMap)
 //----------------------------------------------------------------------------
 void StateMachine::StateEngine(const StateMapRowEx* const pStateMapEx)
 {
-#if EXTERNAL_EVENT_NO_HEAP_DATA
 	BOOL externalEvent = TRUE;
-#endif
 	const EventData* pDataTemp = NULL;
 
 	// While events are being generated keep executing states

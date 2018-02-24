@@ -4,18 +4,19 @@
 
 #ifndef _STATE_MACHINE_H
 #define _STATE_MACHINE_H
-
 #include <typeinfo>
 #include "xallocator.h"
 #include "DataTypes.h"
 #include "Fault.h"
+
+#define EXTERNAL_EVENT_NO_HEAP_DATA 1
 
 // If EXTERNAL_EVENT_NO_HEAP_DATA is defined it changes how a client sends data to the
 // state machine. When undefined, the ExternalEvent() pData argument must be created on the heap.
 // The state machine will automatically delete the EventData pointer during state execution.
 // When defined, clients must not heap allocate EventData with operator new. InternalEvent()
 // used inside the state machine always heap allocates event data.
-//#define EXTERNAL_EVENT_NO_HEAP_DATA 1
+
 
 /// @ Unique state machine event data must inherit from this class.
 class EventData
