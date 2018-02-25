@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "GarageDoor.h"
+#include "mailbox.h"
 
 
 void* GarageDoorThread( void* arg) {
