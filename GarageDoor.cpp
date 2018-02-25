@@ -5,8 +5,8 @@
  *      Author: yxa8247
  */
 #include <iostream>
-#include "GarageDoor.h"
 #include <unistd.h>
+#include "GarageDoor.h"
 
 GarageDoor::GarageDoor() :
 	StateMachine(ST_MAX_STATES),
