@@ -22,7 +22,7 @@ public:
 	void Init();
 	void DoorUp(GarageDoorData* data);
 	void DoorDown(GarageDoorData* data);
-	void Halt();
+	void Halt(GarageDoorData* data);
 private:
 	INT position;
 	BOOL is_open;
@@ -45,7 +45,7 @@ private:
 	STATE_DECLARE(GarageDoor,	upward_operation,	GarageDoorData)
 	STATE_DECLARE(GarageDoor,	door_open,			NoEventData)
 	STATE_DECLARE(GarageDoor,	downward_operation,	GarageDoorData)
-	STATE_DECLARE(GarageDoor,	stop, 				NoEventData)
+	STATE_DECLARE(GarageDoor,	stop, 				GarageDoorData)
 
 	/* State map to define state object order
 	 * Each state amp entry defines a state object */
