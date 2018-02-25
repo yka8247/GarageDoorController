@@ -4,22 +4,19 @@
 #include <unistd.h>
 #include "GarageDoor.h"
 
-void test() {
-	GarageDoor GD;
-	GD.Init();
-	GarageDoorData* data1 = new GarageDoorData();
-	data1->button_pushed = TRUE;
-	GD.DoorUp(data1);
-	GarageDoorData* data2 = new GarageDoorData();
-	data2->button_pushed = TRUE;
-	GD.DoorDown(data2);
-}
 
 void* GarageDoorThread( void* arg) {
 	//TODO: Add GarageDoor functionality here
-	test();
+	GarageDoor GD;
+	GD.Init();
+	while (TRUE) {
+		GarageDoorData* data = new GarageDoorData();
+		data->button_pushed = TRUE;
+		GD.Operate(data);
+	}
 	return (0);
 }
+
 
 int main(int argc, char *argv[]) {
 	std::cout << "Initializing the Garage Door Simulation" << std::endl;
@@ -33,8 +30,6 @@ int main(int argc, char *argv[]) {
 	sleep(10);
 
 
-
 	std::cout << "Terminating the Garage Door Simulation" << std::endl;
-
 	return EXIT_SUCCESS;
 }
