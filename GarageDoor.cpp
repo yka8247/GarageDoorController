@@ -73,9 +73,9 @@ STATE_DEFINE(GarageDoor, upward_operation, GarageDoorData) {
 			InternalEvent(ST_STOP);
 			break;
 		}
+		std::cout << "Opening || Current Position: " << position << std::endl;
 		position++;
 		delay(200);
-		std::cout << "opening..." << std::endl;
 	}
 	if (position == 10) {
 		is_operating = FALSE;			// clear the state flag
@@ -98,9 +98,9 @@ STATE_DEFINE(GarageDoor, downward_operation, GarageDoorData) {
 			InternalEvent(ST_STOP);
 			break;
 		}
-		position--;
+		std::cout << "Closing || Current Position: " << position << std::endl;
 		delay(200);
-		std::cout << "closing..." << std::endl;
+		position--;
 	}
 	if (position == 0) {
 		is_operating = FALSE;				// clear the state flag
