@@ -13,7 +13,7 @@ GarageDoor::GarageDoor() :
 	position(1),
 	is_open(FALSE),
 	is_operating(FALSE),
-	is_closed(FALSE),
+	is_closed(TRUE),
 	overcurrent(FALSE),
 	ir_beam_enabled(FALSE)
 {}
@@ -24,25 +24,13 @@ void GarageDoor::Init() {
 	return;
 }
 
-// opening door
-void GarageDoor::DoorUp(GarageDoorData* data) {
+// invoke motor to either close or open the garage door
+void GarageDoor::Operate(GarageDoorData* data) {
 	BEGIN_TRANSITION_MAP			              			// - Current State -
-		TRANSITION_MAP_ENTRY (ST_UPWARD_OPERATION)			// ST_DOOR_CLOSED
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_UPWARD_OPERATION
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (ST_UPWARD_OPERATION)			// ST_STOP
-	END_TRANSITION_MAP(data)
-}
-
-// closing door
-void GarageDoor::DoorDown(GarageDoorData* data) {
-	BEGIN_TRANSITION_MAP			              			// - Current State -
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_CLOSED
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_UPWARD_OPERATION
-		TRANSITION_MAP_ENTRY (ST_DOWNWARD_OPERATION)		// ST_DOOR_OPEN
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (ST_DOWNWARD_OPERATION)		// ST_STOP
+		TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_DOOR_CLOSED
+		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_OPERATING
+		TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_DOOR_OPEN
+		TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_STOP
 	END_TRANSITION_MAP(data)
 }
 
@@ -51,10 +39,9 @@ void GarageDoor::Halt(GarageDoorData* data)
 {
 	BEGIN_TRANSITION_MAP			              			// - Current State -
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_CLOSED
-		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_UPWARD_OPERATION
+		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_OPERATING
 		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
-		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_DOWNWARD_OPERATION
-		TRANSITION_MAP_ENTRY (CANNOT_HAPPEN)				// ST_STOP
+		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_STOP
 	END_TRANSITION_MAP(NULL)
 }
 
@@ -82,48 +69,49 @@ STATE_DEFINE(GarageDoor, stop, GarageDoorData) {
 		std::cout << "Flag Cuaght :: IR_BEAM_TRIGGERED" << std::endl;
 }
 
-STATE_DEFINE(GarageDoor, upward_operation, GarageDoorData) {
-	std::cout << "Garage Status :: UPWARD_OPERATION" << std::endl;
-	is_operating = TRUE;	// set the state flag
-	while (position < 10) {
-		std::cout << "Opening || Current Position: " << position << std::endl;
-		if (data->overcurrent) {
-			std::cout << "HALT :: OVERCURRENT DETECTED" << std::endl;
-			InternalEvent(ST_STOP);
-			return;
+STATE_DEFINE(GarageDoor, operating, GarageDoorData) {
+	std::cout << "Garage Status :: OPERATING" << std::endl;
+	is_operating = TRUE;							// set the state flag
+	if (is_closed) {
+		while (position < 10) {
+			std::cout << "Opening.. || Current Position: " << position << std::endl;
+			if (data->overcurrent) {
+				std::cout << "HALT :: OVERCURRENT DETECTED" << std::endl;
+				InternalEvent(ST_STOP);
+				return;
+			}
+			if (data->ir_interrupt) {
+				std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
+				InternalEvent(ST_STOP);
+				return;
+			}
+			position++;
+			delay(200);
 		}
-		if (data->ir_interrupt) {
-			std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
-			InternalEvent(ST_STOP);
-			return;
-		}
-		position++;
-		delay(200);
+		std::cout << "FULL OPEN || Current Position: " << position << std::endl;
+		is_operating = FALSE;						// clear the state flag
+		is_closed = FALSE;							// clear the previous flag
+		InternalEvent(ST_DOOR_OPEN, data);			// move on to the next state
 	}
-	std::cout << "Opening || Current Position: " << position << std::endl;
-	is_operating = FALSE;						// clear the state flag
-	InternalEvent(ST_DOOR_OPEN, data);			// move on to the next state
-}
-
-STATE_DEFINE(GarageDoor, downward_operation, GarageDoorData) {
-	std::cout << "Garage Status :: DOWNWARD_OPERATION" << std::endl;
-	is_operating = TRUE;
-	while (position > 1) {
-		std::cout << "Closing || Current Position: " << position << std::endl;
-		if (data->overcurrent) {
-			std::cout << "HALT :: OVERCURRENT DETECTED" << std::endl;
-			InternalEvent(ST_STOP);
-			return;
+	if (is_open) {
+		while (position > 1) {
+			std::cout << "Closing.... || Current Position: " << position << std::endl;
+			if (data->overcurrent) {
+				std::cout << "HALT :: OVERCURRENT DETECTED" << std::endl;
+				InternalEvent(ST_STOP);
+				return;
+			}
+			if (data->ir_interrupt) {
+				std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
+				InternalEvent(ST_STOP);
+				return;
+			}
+			position--;
+			delay(200);
 		}
-		if (data->ir_interrupt) {
-			std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
-			InternalEvent(ST_STOP);
-			return;
-		}
-		position--;
-		delay(200);
+		std::cout << "FULL CLOSED || Current Position: " << position << std::endl;
+		is_operating = FALSE;						// clear the state flag
+		is_open = FALSE;							// clear the previous flag
+		InternalEvent(ST_DOOR_CLOSED, data);		// move on to the next state
 	}
-	std::cout << "Closing || Current Position: " << position << std::endl;
-	is_operating = FALSE;						// clear the state flag
-	InternalEvent(ST_DOOR_CLOSED, data);		// move on to the next state
 }

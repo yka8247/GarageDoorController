@@ -9,19 +9,11 @@ void* GarageDoorThread( void* arg) {
 	//TODO: Add GarageDoor functionality here
 	GarageDoor GD;
 	GD.Init();
-	BOOL toggle = TRUE;
 	while (TRUE) {
 		GarageDoorData* data = new GarageDoorData();
 		data->button_pushed = TRUE;
-		if (toggle) {
-			GD.DoorUp(data);
-			toggle = FALSE;
-		} else{
-			GD.DoorDown(data);
-			toggle = TRUE;
-		}
+		GD.Operate(data);
 	}
-
 	return (0);
 }
 
@@ -39,6 +31,5 @@ int main(int argc, char *argv[]) {
 
 
 	std::cout << "Terminating the Garage Door Simulation" << std::endl;
-
 	return EXIT_SUCCESS;
 }
