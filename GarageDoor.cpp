@@ -77,7 +77,7 @@ STATE_DEFINE(GarageDoor, stop, GarageDoorData) {
 	if (data->overcurrent)
 		overcurrent = TRUE;			// set the OC flag
 		std::cout << "Flag Cuaght :: OVER_CURRENT" << std::endl;
-	if (data->IR_interrupt)
+	if (data->ir_interrupt)
 		ir_triggered = TRUE;		// set the IR flag
 		std::cout << "Flag Cuaght :: IR_BEAM_TRIGGERED" << std::endl;
 }
@@ -92,7 +92,7 @@ STATE_DEFINE(GarageDoor, upward_operation, GarageDoorData) {
 			InternalEvent(ST_STOP);
 			return;
 		}
-		if (data->IR_interrupt) {
+		if (data->ir_interrupt) {
 			std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
 			InternalEvent(ST_STOP);
 			return;
@@ -115,7 +115,7 @@ STATE_DEFINE(GarageDoor, downward_operation, GarageDoorData) {
 			InternalEvent(ST_STOP);
 			return;
 		}
-		if (data->IR_interrupt) {
+		if (data->ir_interrupt) {
 			std::cout << "HALT :: IR_BEAM_TRIGGERED" << std::endl;
 			InternalEvent(ST_STOP);
 			return;

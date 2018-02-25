@@ -12,7 +12,7 @@
 class GarageDoorData : public EventData {
 public:
 	BOOL button_pushed;
-	BOOL IR_interrupt;
+	BOOL ir_interrupt;
 	BOOL overcurrent;
 };
 
