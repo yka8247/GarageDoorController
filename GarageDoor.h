@@ -41,11 +41,11 @@ private:
 	};
 
 	// Define the state machine state functions with event data type
-	STATE_DECLARE(GarageDoor,	door_closed,		GarageDoorData)
-	STATE_DECLARE(GarageDoor,	upward_operation,	NoEventData)
-	STATE_DECLARE(GarageDoor,	door_open,			GarageDoorData)
-	STATE_DECLARE(GarageDoor,	downward_operation,	NoEventData)
-	STATE_DECLARE(GarageDoor,	stop, 				GarageDoorData)
+	STATE_DECLARE(GarageDoor,	door_closed,		NoEventData)
+	STATE_DECLARE(GarageDoor,	upward_operation,	GarageDoorData)
+	STATE_DECLARE(GarageDoor,	door_open,			NoEventData)
+	STATE_DECLARE(GarageDoor,	downward_operation,	GarageDoorData)
+	STATE_DECLARE(GarageDoor,	stop, 				NoEventData)
 
 	/* State map to define state object order
 	 * Each state amp entry defines a state object */
