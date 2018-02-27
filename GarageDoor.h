@@ -14,6 +14,15 @@ public:
 	BOOL button_pushed;
 	BOOL ir_interrupt;
 	BOOL overcurrent;
+
+//	GarageDoorData():
+//		button_pushed(),
+//		ir_interrupt(),
+//		overcurrent()
+//	{}
+//	void button_flag(BOOL flag) {button_pushed = flag;}
+//	void ir_flag(BOOL flag) {ir_interrupt = flag;}
+//	void oc_flag(BOOL flag) {overcurrent = flag;}
 };
 
 class GarageDoor : public StateMachine {
