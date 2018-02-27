@@ -7,7 +7,6 @@
 
 #ifndef InputScanner_H_
 #define InputScanner_H_
-#include "InputScanner.h"
 #include "StateMachine.h"
 #include "GarageDoor.h"
 
@@ -23,8 +22,8 @@ private:
     };
 
     // Define the state machine state functions with event data type
-    STATE_DECLARE(InputScanner,	idle,					GarageDoorData)
-    STATE_DECLARE(InputScanner,	event_received,			NoEventData)
+    STATE_DECLARE(InputScanner,	idle,					NoEventData)
+    STATE_DECLARE(InputScanner,	event_received,			GarageDoorData)
 
     /* State map to define state object order
          * Each state amp entry defines a state object */
