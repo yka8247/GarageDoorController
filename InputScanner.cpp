@@ -1,38 +1,62 @@
 /*
- * GarageDoor.cpp
+ * InputScanner.cpp
  *
  *  Created on: Feb 23, 2018
  *      Author: mxa5473
  */
-#include <iostream>
-#include <unistd.h>
+
 #include "InputScanner.h"
+#include "GarageDoor.h"
+#include "StateMachine.h"
 
-InputScanner::InputScanner():
-	StateMachine(ST_MAX_STATES)
-	{}
+// scan the input
+InputScanner::GarageDoor() {}
+//    while(1) {
+//        InputScanner keyScanner = InputScanner();
+//        event_received input = keyScanner.scanInput();
+//
+//        // otherwise no input
+//
+//    }
 
-// initialize the InputScanner Object
-void InputScanner::Init() {
-	// TODO: figure out how to initiailize with closed state
-	return;
+
+
+
+
+
+STATE_DEFINE(GarageDoor, idle, GarageDoorData) {
+	std::cout << "Input Scanner Status: IDLE" << std::endl;
+	if (data->button_pushed){}
+		// event received
+		// send data to mailbox
+		// output message
 }
 
-void InputScanner::Idle(InputScannerData* data){
-	BEGIN_TRANSITION_MAP			              			// - Current State -
-			TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_DOOR_CLOSED
-			TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_OPERATING
-			TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_DOOR_OPEN
-			TRANSITION_MAP_ENTRY (ST_OPERATING)					// ST_STOP
-		END_TRANSITION_MAP(data)
+STATE_DEFINE(GarageDoor, event_received, GarageDoorData) {
+	if (data->button_pushed) {
+		BUTTON_PUSHED = true;
+		IR_INTERRUPT = false;
+		OVERCURRENT = false;
 	}
 
-void InputScanner::CreateEvent(InputScannerData data){
-	BEGIN_TRANSITION_MAP			              			// - Current State -
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_CLOSED
-		TRANSITION_MAP_ENTRY (ST_STOP)						// ST_OPERATING
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_DOOR_OPEN
-		TRANSITION_MAP_ENTRY (EVENT_IGNORED)				// ST_STOP
-	END_TRANSITION_MAP(NULL)
-}
+		//If the door is in is_open or stop states and the button is pushed the door would close.
+	if (position == 1) {
+		is_closed = TRUE;	// set the state flag
+		std::cout << "Garage Status :: CLOSED" << std::endl;
+	}
 
+		//otherwise the door would open.
+	if (position == 0){
+		is_closed = TRUE;	// set the state flag
+	}
+	std::cout << "Garage Status :: CLOSED" << std::endl;
+	if (data->overcurrent) {
+		BUTTON_PUSHED = false;
+		IR_INTERRUPT = true;
+		OVERCURRENT = false;
+	} else if (data->ir_interrupt) {
+		BUTTON_PUSHED = false;
+		IR_INTERRUPT = false;
+		OVERCURRENT = true;
+	}
+	std::cout << "Input Scanner Status :: EVENT RECEIVED  " << std::endl;
