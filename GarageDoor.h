@@ -19,7 +19,6 @@ public:
 class GarageDoor : public StateMachine {
 public:
 	GarageDoor();
-	void Init();
 	void Operate(GarageDoorData* data);
 	void Halt(GarageDoorData* data);
 private:

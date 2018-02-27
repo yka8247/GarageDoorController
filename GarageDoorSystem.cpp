@@ -51,7 +51,6 @@ void* GarageDoorThread( void* arg) {
 
 	//chid = ChannelCreate (0);
 
-	GD.Init();
 	while (TRUE) {
 		GarageDoorData* data = new GarageDoorData();
 		data->button_pushed = TRUE;

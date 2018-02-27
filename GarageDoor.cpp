@@ -18,12 +18,6 @@ GarageDoor::GarageDoor() :
 	ir_beam_enabled(FALSE)
 {}
 
-// initialize the GarageDoor Object
-void GarageDoor::Init() {
-	// TODO: figure out how to initiailize with closed state
-	return;
-}
-
 // invoke motor to either close or open the garage door
 void GarageDoor::Operate(GarageDoorData* data) {
 	BEGIN_TRANSITION_MAP			              			// - Current State -
