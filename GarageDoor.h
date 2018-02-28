@@ -32,12 +32,14 @@ public:
 	void Halt(GarageDoorData* data);
 private:
 	INT position;
-	BOOL is_open;
+	BOOL was_open;
+	BOOL full_open;
 	BOOL is_operating;
-	BOOL is_closed;
+	BOOL was_closed;
+	BOOL full_closed;
 	BOOL overcurrent;
 	BOOL ir_beam_enabled;
-	BOOL ir_triggered;
+	BOOL ir_beam_triggered;
 	enum States {
 		ST_DOOR_CLOSED,
 		ST_OPERATING,

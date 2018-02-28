@@ -138,7 +138,6 @@ int main(int argc, char **argv) {
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	/* Thread Ready? */
 	pthread_create(NULL, &attr, &GarageDoorThread, (void*)chid);
-	//pthread_create(NULL, &attr, &MockSender, (void*)chid);
 	pthread_create(NULL, &attr, &InputScannerThread, (void*)chid);
 	/* Run thread for 600 sec */
 	sleep(600);
