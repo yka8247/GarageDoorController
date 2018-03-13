@@ -6,6 +6,7 @@
  */
 #include <iostream>
 #include <unistd.h>
+#include <pthread.h>
 #include "GarageDoor.h"
 
 
@@ -71,6 +72,22 @@ void GarageDoor::Halt(GarageDoorData* data)
 }
 
 
+void* UpwardTimer(void* args) {
+	for(int i=0; i< 10; i++) {
+		sleep(1);
+	}
+	return (FALSE);
+}
+
+
+void* DownwardTimer() {
+	for (int i=10; i>0; i--) {
+		sleep(1);
+	}
+	return (FALSE);
+}
+
+
 // state machine sits here when motor is not running
 STATE_DEFINE(GarageDoor, door_closed, NoEventData) {
 	if (position == 1) {
@@ -104,12 +121,13 @@ STATE_DEFINE(GarageDoor, door_open, NoEventData) {
 
 
 STATE_DEFINE(GarageDoor, motor_up, GarageDoorData) {
+	pthread_t timerThread;
 	std::cout << "Garage Status :: MOTOR UP" << std::endl;
 	full_close = FALSE;
 	if (data->full_open_signal) {
 		InternalEvent(ST_DOOR_OPEN, data);
 	}
-	//position++;
+	//@TODO: Implement Timer right here
 
 }
 
@@ -120,7 +138,8 @@ STATE_DEFINE(GarageDoor, motor_down, GarageDoorData) {
 	if (data->full_open_signal) {
 		InternalEvent(ST_DOOR_CLOSED, data);
 	}
-	//position--;
+	//@TODO: Implement Timer right here
+
 }
 
 
@@ -128,7 +147,7 @@ STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
 	std::cout << "Garage Status :: UPWARD STOP" << std::endl;
 
 	if (data->overcurrent == TRUE) {
-		overcurrent = TRUE;			// set the OC flag
+		overcurrent = TRUE;				// set the OC flag
 		std::cout << "Flag Caught :: OVER_CURRENT" << std::endl;
 	}
 	if (data->ir_interrupt == TRUE) {
@@ -141,7 +160,7 @@ STATE_DEFINE(GarageDoor, downward_stop, GarageDoorData) {
 	std::cout << "Garage Status :: DOWNWARD STOP" << std::endl;
 
 	if (data->overcurrent == TRUE) {
-		overcurrent = TRUE;			// set the OC flag
+		overcurrent = TRUE;				// set the OC flag
 		std::cout << "Flag Caught :: OVER_CURRENT" << std::endl;
 	}
 	if (data->ir_interrupt == TRUE) {

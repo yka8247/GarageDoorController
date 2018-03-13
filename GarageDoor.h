@@ -25,6 +25,8 @@ public:
 	GarageDoor();
 	void Operate(GarageDoorData* data);
 	void Halt(GarageDoorData* data);
+	void* UpwardTimer(void* args);
+	void* DownwardTimer(void* args);
 private:
 	INT position;
 	BOOL full_open;
