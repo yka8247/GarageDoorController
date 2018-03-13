@@ -6,17 +6,15 @@
 #include <string.h>
 #include <process.h>
 #include "GarageDoor.h"
-#include "InputScanner.h"
 #include "Channels.h"
 
 
-void* InputScannerController( void* args) {
+void* InputScannerController(void* args) {
 	/* Initialize Message Channels */
 	Channels* chids = (Channels*)args;
 	int sendCh = chids->gdc_chid;
 	int receiveCh = chids->is_chid;
 	/* Initialize variables */
-	InputScanner IS;
 	int coid;
 	int rcvid;
 	char rmsg [100];
@@ -24,7 +22,7 @@ void* InputScannerController( void* args) {
 	coid = ConnectAttach(0,getpid(),sendCh,0,0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
-		return 0;
+		return (FALSE);
 	}
 
 	while (TRUE) {
@@ -46,16 +44,32 @@ void* InputScannerController( void* args) {
 			std::cout <<"Shut Down::<<InputScanner>>" << std::endl;
 			break;
 		}
-//		if (char_input == 'b' || char_input == 'B') {
-//			GarageDoorData* data = new GarageDoorData();
-//			data->button_pushed = TRUE;
-//			IS.Event_Received(data);
-//			//strcpy(smsg, "button_pushed");
-//			MsgSend(coid, (void*)data, sizeof(data), rmsg, sizeof (rmsg));
-//		}
 	}
-	return (0);
+	return (FALSE);
 }
+
+
+//void* HardwareController(void* args){
+//	/* Initialize Message Channels */
+//	Channels* chids = (Channels*)args;
+//	int chid = chids->is_chid;
+//	/* Initialize variables */
+//	int coid;
+//	char inp;
+//	char rmsg[100];
+//	coid = ConnectAttach(0, getpid(), chid, 0, 0);
+//	if (coid == -1) {
+//		std::cout << "Connection Failed" << std::endl;
+//		return 0;
+//	}
+//	/* @TODO: Fill up necessary hardware initialization here */
+//
+//	while(TRUE) {
+//		/* @TODO: Fill up necessary hardware invocation here */
+//	}
+//	return EXIT_SUCCESS;
+//}
+
 
 
 void* KeyboardScannerController(void* args){
@@ -69,7 +83,7 @@ void* KeyboardScannerController(void* args){
 	coid = ConnectAttach(0, getpid(), chid, 0, 0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
-		return 0;
+		return (FALSE);
 	}
 	/* Print instruction messages for the keyboard simulation */
 	std::cout << "Initializing Keyboard Interrupt Simulation" << std::endl;
@@ -78,7 +92,7 @@ void* KeyboardScannerController(void* args){
 	std::cout << "Press 'i' or 'I' to simulate Infrared Beam Triggered Effect" << std::endl;
 	std::cout << "Press 't' or 'T' to Terminate the Simulation" << std::endl;
 
-	while(1) {
+	while(TRUE) {
 		std::cin >> inp;
 		switch(inp) {
 		case 'B':
@@ -114,26 +128,25 @@ void* KeyboardScannerController(void* args){
 			std::cout << "Invalid input" << std::endl;
 		}
 	}
-
 	return EXIT_SUCCESS;
 }
 
 
-void* GarageDoorController( void* args) {
+void* GarageDoorController(void* args) {
 	/* Initialize Message Channels */
 	Channels* chids = (Channels*)args;
 	int sendCh = chids->is_chid;
 	int receiveCh = chids->gdc_chid;
 	/* Initialization */
-	//GarageDoorData* data;
-	//GarageDoor GD;
+	GarageDoorData* data;
+	GarageDoor GD;
 	int coid;
 	int rcvid;
 	char message[100];
 	coid = ConnectAttach(0,getpid(),sendCh,0,0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
-		return 0;
+		return (FALSE);
 	}
 
 	while (TRUE) {
@@ -142,19 +155,16 @@ void* GarageDoorController( void* args) {
 		if (rcvid) {
 			std::cout << "Arrived message <<GDC>>: " << message << std::endl;
 		}
-//		if (message == "button_pushed") {
-//			data->button_pushed = TRUE;
-//			GD.Operate(data);
-//		}
-//		if (message == "overcurrent") {
-//			data->overcurrent = TRUE;
-//			GD.Halt(data);
-//		}
-//		if (message == "ir_interrupt") {
-//			data->ir_interrupt = TRUE;
-//			GD.Halt(data);
-//		}
-//		GD.Operate(data);
+		data = eventGenerator(message[0]);
+		if (data->button_pushed) {
+			// print for testing purposes
+			std::cout << "Button Push Detected" << std::endl;
+			GD.Operate(data);
+		} else {
+			// print for testing purposes
+			std::cout << "Something Else Detected" << std::endl;
+			GD.Halt(data);
+		}
 		/* send a response back to the sender */
 		std::string response = "<<GDC>> Received";
 		MsgReply(rcvid, 1, &response, sizeof(response));
@@ -164,38 +174,15 @@ void* GarageDoorController( void* args) {
 			break;
 		}
 	}
-	return (0);
+	return (FALSE);
 }
-
-//void* MockSender( void* arg) {
-//	int coid;
-//	int chid = (int)arg;
-//	const char* smsg = "hmm";
-//	char rmsg [200];
-//	coid = ConnectAttach(0,getpid(),chid,0,0);
-//	while(TRUE) {
-//		if (coid == -1) {
-//			std::cout << "Connection Failed!" << std::endl;
-//		}
-//
-//		if (MsgSend(coid, smsg, strlen(smsg) + 1, rmsg, sizeof (rmsg)) == -1 ){
-//			std::cout << "Error during MsgSend" << std::endl;
-//		}
-//
-//		if (strlen(rmsg) > 0) {
-//			std::cout << "Process returns " << rmsg << std::endl;
-//		}
-//		delay(100);
-//	}
-//	return (0);
-//}
 
 
 int main(int argc, char **argv) {
 	/* Get Full Permission over RTOS */
 	if ( ThreadCtl(_NTO_TCTL_IO, NULL) == -1) {
 		std::perror("Failed to get I/O access permission");
-		return 1;
+		return TRUE;
 	}
 	/* Prepare thread creation*/
 	pthread_t keyboardScannerThread;
