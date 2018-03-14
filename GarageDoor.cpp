@@ -10,50 +10,33 @@
 #include "GarageDoor.h"
 
 
-GarageDoorData* KeyboardEventGenerator(char inp) {
+GarageDoorData* EventGenerator(char inp) {
 	GarageDoorData* data = new GarageDoorData();
 	switch(inp) {
-	case 'B':
 	case 'b':{
 		data->button_pushed = TRUE;
 		break;
 	}
-	case 'I':
 	case 'i': {
 		data->ir_interrupt = TRUE;
 		break;
 	}
-	case 'O':
 	case 'o': {
 		data->overcurrent = TRUE;
+		break;
+	}
+	case 'c': {
+		data->full_open_signal = TRUE;
+		break;
+	}
+	case 'd': {
+		data->full_close_signal = TRUE;
 		break;
 	}
 	}
 	return data;
 }
 
-
-GarageDoorData* HardwareEventGenerator(char inp) {
-	GarageDoorData* data = new GarageDoorData();
-	switch(inp) {
-	case 'B':
-	case 'b':{
-		data->button_pushed = TRUE;
-		break;
-	}
-	case 'I':
-	case 'i': {
-		data->ir_interrupt = TRUE;
-		break;
-	}
-	case 'O':
-	case 'o': {
-		data->overcurrent = TRUE;
-		break;
-	}
-	}
-	return data;
-}
 
 
 GarageDoor::GarageDoor() :
@@ -112,7 +95,6 @@ STATE_DEFINE(GarageDoor, door_open, NoEventData) {
 
 
 STATE_DEFINE(GarageDoor, motor_up, GarageDoorData) {
-	pthread_t timerThread;
 	std::cout << "Garage Status :: MOTOR UP" << std::endl;
 	full_close = FALSE;
 	if (data->full_open_signal) {

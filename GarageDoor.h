@@ -19,8 +19,7 @@ public:
 	BOOL full_open_signal;
 };
 
-GarageDoorData* KeyboardEventGenerator(char);
-GarageDoorData* HardwareEventGenerator();
+GarageDoorData* EventGenerator(char);
 
 
 class GarageDoor : public StateMachine {
