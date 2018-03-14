@@ -10,7 +10,7 @@
 #include "GarageDoor.h"
 
 
-GarageDoorData* eventGenerator(char inp) {
+GarageDoorData* KeyboardEventGenerator(char inp) {
 	GarageDoorData* data = new GarageDoorData();
 	switch(inp) {
 	case 'B':
@@ -88,35 +88,20 @@ void* DownwardTimer() {
 }
 
 
-// state machine sits here when motor is not running
 STATE_DEFINE(GarageDoor, door_closed, NoEventData) {
-	if (position == 1) {
-		// set the state flag
-		full_close = TRUE;
-		std::cout << "Garage Status :: CLOSED" << std::endl;
-		// set the hardware pin values appropriately
-		// @TODO: Hardware Configuration code goes here
-	} else {
-		std::cout << "Garage Status :: ERROR" << std::endl;
-		std::cout << "Current Position :: " << position << std::endl;
-		InternalEvent(ST_DOWNWARD_STOP);
-	}
+	// set the state flag
+	full_close = TRUE;
+	std::cout << "Garage Status :: CLOSED" << std::endl;
+	// @TODO: Hardware Configuration code goes here
 }
 
 
 STATE_DEFINE(GarageDoor, door_open, NoEventData) {
-	if (position == 10) {
-		// set the state flag
-		full_open = TRUE;
-		ir_beam_enabled = TRUE;
-		std::cout << "Garage Status :: OPEN" << std::endl;
-		// set the hardware pin values appropriately
-		// @TODO: Hardware Configuration code goes here
-	} else {
-		std::cout << "Garage Status :: ERROR" << std::endl;
-		std::cout << "Current Position :: " << position << std::endl;
-		InternalEvent(ST_UPWARD_STOP);
-	}
+	// set the state flag
+	full_open = TRUE;
+	ir_beam_enabled = TRUE;
+	std::cout << "Garage Status :: OPEN" << std::endl;
+	// @TODO: Hardware Configuration code goes here
 }
 
 
@@ -127,7 +112,8 @@ STATE_DEFINE(GarageDoor, motor_up, GarageDoorData) {
 	if (data->full_open_signal) {
 		InternalEvent(ST_DOOR_OPEN, data);
 	}
-	//@TODO: Implement Timer right here
+	//@TODO: Implement Hardware Output Here
+	// set pin 1 (motor up) to 1
 
 }
 
@@ -138,14 +124,16 @@ STATE_DEFINE(GarageDoor, motor_down, GarageDoorData) {
 	if (data->full_open_signal) {
 		InternalEvent(ST_DOOR_CLOSED, data);
 	}
-	//@TODO: Implement Timer right here
+	//@TODO: Implement Hardware Output Here
 
 }
 
 
 STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
 	std::cout << "Garage Status :: UPWARD STOP" << std::endl;
-
+	if (data->button_pushed == TRUE) {
+		std::cout << "User Intent :: PAUSED" << std::endl;
+	}
 	if (data->overcurrent == TRUE) {
 		overcurrent = TRUE;				// set the OC flag
 		std::cout << "Flag Caught :: OVER_CURRENT" << std::endl;
@@ -158,7 +146,9 @@ STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
 
 STATE_DEFINE(GarageDoor, downward_stop, GarageDoorData) {
 	std::cout << "Garage Status :: DOWNWARD STOP" << std::endl;
-
+	if (data->button_pushed == TRUE) {
+		std::cout << "User Intent :: PAUSED" << std::endl;
+	}
 	if (data->overcurrent == TRUE) {
 		overcurrent = TRUE;				// set the OC flag
 		std::cout << "Flag Caught :: OVER_CURRENT" << std::endl;

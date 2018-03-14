@@ -18,17 +18,15 @@ public:
 	BOOL full_open_signal;
 };
 
-GarageDoorData* eventGenerator(char);
-
+GarageDoorData* KeyboardEventGenerator(char);
+//GarageDoorData* HardwareEventGenerator();
 class GarageDoor : public StateMachine {
 public:
 	GarageDoor();
 	void Operate(GarageDoorData* data);
 	void Halt(GarageDoorData* data);
-	void* UpwardTimer(void* args);
-	void* DownwardTimer(void* args);
+
 private:
-	INT position;
 	BOOL full_open;
 	BOOL is_operating;
 	BOOL full_close;

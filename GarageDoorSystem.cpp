@@ -29,7 +29,7 @@ void* InputScannerController(void* args) {
 		/* check if any message arrived */
 		rcvid = MsgReceive(receiveCh, message, sizeof(message), NULL);
 		if (rcvid) {
-			std::cout << "Arrived message <<Input Scanner>>: " << message << std::endl;
+			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
 		}
 		/* send a response back to the sender */
 		std::string response = "InputScanner <<Received>>";
@@ -49,26 +49,27 @@ void* InputScannerController(void* args) {
 }
 
 
-//void* HardwareController(void* args){
-//	/* Initialize Message Channels */
-//	Channels* chids = (Channels*)args;
-//	int chid = chids->is_chid;
-//	/* Initialize variables */
-//	int coid;
-//	char inp;
-//	char rmsg[100];
-//	coid = ConnectAttach(0, getpid(), chid, 0, 0);
-//	if (coid == -1) {
-//		std::cout << "Connection Failed" << std::endl;
-//		return 0;
-//	}
-//	/* @TODO: Fill up necessary hardware initialization here */
-//
-//	while(TRUE) {
-//		/* @TODO: Fill up necessary hardware invocation here */
-//	}
-//	return EXIT_SUCCESS;
-//}
+void* HardwareController(void* args){
+	/* Initialize Message Channels */
+	Channels* chids = (Channels*)args;
+	int chid = chids->is_chid;
+	/* Initialize variables */
+	int coid;
+	char inp;
+	char rmsg[100];
+	coid = ConnectAttach(0, getpid(), chid, 0, 0);
+	if (coid == -1) {
+		std::cout << "Connection Failed" << std::endl;
+		return 0;
+	}
+	/* @TODO: Fill up necessary hardware initialization here */
+
+	while(TRUE) {
+		/* @TODO: Fill up necessary hardware invocation here */
+
+	}
+	return EXIT_SUCCESS;
+}
 
 
 
@@ -153,19 +154,24 @@ void* GarageDoorController(void* args) {
 		// check if any message arrived
 		rcvid = MsgReceive (receiveCh, message, sizeof(message), NULL);
 		if (rcvid) {
-			std::cout << "Arrived message <<GDC>>: " << message << std::endl;
+			std::cout << "<<GDC>>: " << message[0] << std::endl;
 		}
-		data = eventGenerator(message[0]);
+		data = KeyboardEventGenerator(message[0]);
+		//@TODO: Replace KeyboardEventGenerator to HardwareEventGenerator
 		if (data->button_pushed) {
 			// print for testing purposes
 			std::cout << "Button Push Detected" << std::endl;
 			GD.Operate(data);
-		} else {
+		} else if(data->ir_interrupt) {
 			// print for testing purposes
-			std::cout << "Something Else Detected" << std::endl;
+			std::cout << "IR Beam Interruption Detected" << std::endl;
+			GD.Halt(data);
+		} else if(data->overcurrent) {
+			// print for testing purposes
+			std::cout << "OverCurrent Detected" << std::endl;
 			GD.Halt(data);
 		}
-		/* send a response back to the sender */
+		/* send a response back to unlock the mutex */
 		std::string response = "<<GDC>> Received";
 		MsgReply(rcvid, 1, &response, sizeof(response));
 		/* Terminate */
@@ -184,9 +190,15 @@ int main(int argc, char **argv) {
 		std::perror("Failed to get I/O access permission");
 		return TRUE;
 	}
+	/* Hardware Initialization */
+	//
+	//
+	//
 	/* Prepare thread creation*/
 	pthread_t keyboardScannerThread;
-	pthread_t inputScannerThread;
+	//@TODO: implement Hardware Thread
+	//pthread_t HardwareScannerThread;
+	pthread_t InputScannerThread;
 	pthread_t GarageDoorThread;
 	/* Prepare channel structure creation */
 	int gdc_chid = ChannelCreate(0);
@@ -195,13 +207,18 @@ int main(int argc, char **argv) {
 	/* Initialization complete -> Move on to runtime environment */
 	std::cout << "Initializing the Garage Door Simulation" << std::endl;
 	/* Call Threads */
-	pthread_create(&inputScannerThread, NULL, &InputScannerController, (void*)&channels);
+	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&channels);
 	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&channels);
 	pthread_create(&keyboardScannerThread, NULL, &KeyboardScannerController, (void*)&channels);
+	//@TODO: implement Hardware Thread
+	//pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&channels);
 	/* Join Threads */
-	pthread_join(inputScannerThread, NULL);
+	pthread_join(InputScannerThread, NULL);
 	pthread_join(GarageDoorThread, NULL);
 	pthread_join(keyboardScannerThread, NULL);
+	//@TODO: implement Hardware Thread
+	//pthread_join(HardwareScannerThread, NULL);
+
 
 	std::cout << "Terminating the Garage Door Simulation" << std::endl;
 	return EXIT_SUCCESS;
