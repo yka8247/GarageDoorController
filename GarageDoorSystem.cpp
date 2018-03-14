@@ -2,11 +2,14 @@
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
-#include <sys/neutrino.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/mman.h>
+#include <sys/neutrino.h>
 #include <process.h>
 #include "GarageDoor.h"
 #include "Channels.h"
+#include "Hardware.h"
 
 
 void* InputScannerController(void* args) {
@@ -185,19 +188,21 @@ void* GarageDoorController(void* args) {
 
 
 int main(int argc, char **argv) {
+	/* Hardware Initialization */
+	uintptr_t ctrlHandle;
+	ctrlHandle = mmap_device_io(IO_PORT_SIZE, CTRL_ADDRESS);
 	/* Get Full Permission over RTOS */
 	if ( ThreadCtl(_NTO_TCTL_IO, NULL) == -1) {
 		std::perror("Failed to get I/O access permission");
-		return TRUE;
+		return 1;
 	}
-	/* Hardware Initialization */
-	//
-	//
-	//
+	if(ctrlHandle == MAP_DEVICE_FAILED) {
+		perror("Failed to map control register");
+		return 2;
+	}
 	/* Prepare thread creation*/
 	pthread_t keyboardScannerThread;
-	//@TODO: implement Hardware Thread
-	//pthread_t HardwareScannerThread;
+	pthread_t HardwareScannerThread;
 	pthread_t InputScannerThread;
 	pthread_t GarageDoorThread;
 	/* Prepare channel structure creation */
@@ -209,15 +214,13 @@ int main(int argc, char **argv) {
 	/* Call Threads */
 	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&channels);
 	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&channels);
-	pthread_create(&keyboardScannerThread, NULL, &KeyboardScannerController, (void*)&channels);
-	//@TODO: implement Hardware Thread
-	//pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&channels);
+	//pthread_create(&keyboardScannerThread, NULL, &KeyboardScannerController, (void*)&channels);
+	pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&channels);
 	/* Join Threads */
 	pthread_join(InputScannerThread, NULL);
 	pthread_join(GarageDoorThread, NULL);
-	pthread_join(keyboardScannerThread, NULL);
-	//@TODO: implement Hardware Thread
-	//pthread_join(HardwareScannerThread, NULL);
+	//pthread_join(keyboardScannerThread, NULL);
+	pthread_join(HardwareScannerThread, NULL);
 
 
 	std::cout << "Terminating the Garage Door Simulation" << std::endl;
