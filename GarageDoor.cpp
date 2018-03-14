@@ -35,7 +35,6 @@ GarageDoorData* KeyboardEventGenerator(char inp) {
 
 GarageDoor::GarageDoor() :
 	StateMachine(ST_MAX_STATES),
-	position(1),
 	full_open(FALSE),
 	is_operating(FALSE),
 	full_close(TRUE),
@@ -68,23 +67,7 @@ void GarageDoor::Halt(GarageDoorData* data)
 		TRANSITION_MAP_ENTRY(ST_DOWNWARD_STOP)				// ST_MOTOR_DOWN
 		TRANSITION_MAP_ENTRY(ST_UPWARD_STOP)				// ST_UPWARD_STOP
 		TRANSITION_MAP_ENTRY(ST_DOWNWARD_STOP)				// ST_DOWNWARD_STOP
-	END_TRANSITION_MAP(NULL)
-}
-
-
-void* UpwardTimer(void* args) {
-	for(int i=0; i< 10; i++) {
-		sleep(1);
-	}
-	return (FALSE);
-}
-
-
-void* DownwardTimer() {
-	for (int i=10; i>0; i--) {
-		sleep(1);
-	}
-	return (FALSE);
+	END_TRANSITION_MAP(data)
 }
 
 
