@@ -9,6 +9,7 @@
 #define GARAGEDOOR_H_
 #include "StateMachine.h"
 
+
 class GarageDoorData : public EventData {
 public:
 	BOOL button_pushed;
@@ -19,7 +20,9 @@ public:
 };
 
 GarageDoorData* KeyboardEventGenerator(char);
-//GarageDoorData* HardwareEventGenerator();
+GarageDoorData* HardwareEventGenerator();
+
+
 class GarageDoor : public StateMachine {
 public:
 	GarageDoor();

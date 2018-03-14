@@ -7,6 +7,7 @@
 
 #ifndef CHANNELS_H_
 #define CHANNELS_H_
+#include "GarageDoor.h"
 
 struct Channels {
 	int is_chid;

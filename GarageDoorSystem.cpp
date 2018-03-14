@@ -159,8 +159,8 @@ void* GarageDoorController(void* args) {
 		if (rcvid) {
 			std::cout << "<<GDC>>: " << message[0] << std::endl;
 		}
-		data = KeyboardEventGenerator(message[0]);
-		//@TODO: Replace KeyboardEventGenerator to HardwareEventGenerator
+		// data = KeyboardEventGenerator(message[0]);
+		data = HardwareEventGenerator(message[0]);
 		if (data->button_pushed) {
 			// print for testing purposes
 			std::cout << "Button Push Detected" << std::endl;
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	if(ctrlHandle == MAP_DEVICE_FAILED) {
-		perror("Failed to map control register");
+		std::perror("Failed to map control register");
 		return 2;
 	}
 	/* Prepare thread creation*/

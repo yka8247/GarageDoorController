@@ -33,6 +33,29 @@ GarageDoorData* KeyboardEventGenerator(char inp) {
 }
 
 
+GarageDoorData* HardwareEventGenerator(char inp) {
+	GarageDoorData* data = new GarageDoorData();
+	switch(inp) {
+	case 'B':
+	case 'b':{
+		data->button_pushed = TRUE;
+		break;
+	}
+	case 'I':
+	case 'i': {
+		data->ir_interrupt = TRUE;
+		break;
+	}
+	case 'O':
+	case 'o': {
+		data->overcurrent = TRUE;
+		break;
+	}
+	}
+	return data;
+}
+
+
 GarageDoor::GarageDoor() :
 	StateMachine(ST_MAX_STATES),
 	full_open(FALSE),
