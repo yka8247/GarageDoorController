@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
@@ -65,6 +66,7 @@ void* HardwareController(void* args){
 	uintptr_t ctrlHandle = mmap_device_io(IO_PORT_SIZE, CTRL_ADDRESS);
 	uintptr_t paHandle = mmap_device_io(IO_PORT_SIZE, PORT_A_ADDRESS);
 	uintptr_t pbHandle = mmap_device_io(IO_PORT_SIZE, PORT_B_ADDRESS);
+
 	if(ctrlHandle == MAP_DEVICE_FAILED) {
 		std::perror("Failed to map CTRL register");
 		return (0);
@@ -77,44 +79,50 @@ void* HardwareController(void* args){
 		std::perror("Failed to map PORT_B register");
 		return (0);
 	}
-	// Question 1: It seemed like our GPIO port A is not enabled as Input mode. Why..?
-	out8(ctrlHandle, 0x04);		// Initialize CTRL
-	out8(ctrlHandle, 0x00);		// PORT B -> Output Mode
-	out8(ctrlHandle, 0x10);		// PORT A -> Input Mode
+
+	// Set control mode << 0001 0000 >> portA = input , portB = output
+	out8(ctrlHandle, 0x10);
+
 	/* Attach the message channel */
 	coid = ConnectAttach(0, getpid(), chid, 0, 0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
 		return 0;
 	}
+
+	//Take FPGA out of reset
+	//set A2-12 to "high"
+
+
 	while(TRUE) {
 		/* @TODO: Fill up necessary hardware invocation here */
 		// Question 2 : Why doesn't if conditional does not take defined P1~7 from Hardware.h???
-		if ( (in8(paHandle) & 0x01) == 1 ) {		// got Full_Open Signal
+		uint8_t inp_sig = in8(paHandle);
+		if ( inp_sig & P1 ) {		// got Full_Open Signal
 			inp = 'c';
 			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
 				std::cout << "Failed to send a message :: " << inp << std::endl;
 			}
 		}
-		if ((in8(paHandle) & 0x02) == 1) {			// got Full_Close Signal
+		if ( inp_sig & P2 ) {			// got Full_Close Signal
 			inp = 'd';
 			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
 				std::cout << "Failed to send a message :: " << inp << std::endl;
 			}
 		}
-		if ((in8(paHandle) & 0x04) == 1) {			// got IR_BEAM_BROKEN Signal
+		if ( inp_sig & P3 ) {			// got IR_BEAM_BROKEN Signal
 			inp = 'i';
 			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
 				std::cout << "Failed to send a message :: " << inp << std::endl;
 			}
 		}
-		if ((in8(paHandle) & 0x08) == 1) {			// got OVER_CURRENT Signal
+		if ( inp_sig & P4 ) {			// got OVER_CURRENT Signal
 			inp = 'o';
 			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
 				std::cout << "Failed to send a message :: " << inp << std::endl;
 			}
 		}
-		if ((in8(paHandle) & 0x10) == 1) {			// got REMOTE_PUSH_BUTTON Signal
+		if ( inp_sig & P5 ) {			// got REMOTE_PUSH_BUTTON Signal
 			inp = 'b';
 			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
 				std::cout << "Failed to send a message :: Remote Push Button" << std::endl;
