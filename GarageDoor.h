@@ -7,6 +7,7 @@
 
 #ifndef GARAGEDOOR_H_
 #define GARAGEDOOR_H_
+#include <stdint.h>
 #include "StateMachine.h"
 
 
@@ -17,15 +18,17 @@ public:
 	BOOL overcurrent;
 	BOOL full_close_signal;
 	BOOL full_open_signal;
+	uintptr_t pbHandle;
 };
 
-GarageDoorData* EventGenerator(char);
+GarageDoorData* EventGenerator(char, uintptr_t);
 
 
 class GarageDoor : public StateMachine {
 public:
 	GarageDoor();
 	void Operate(GarageDoorData* data);
+	void Complete(GarageDoorData* data);
 	void Halt(GarageDoorData* data);
 
 private:
@@ -46,8 +49,8 @@ private:
 	};
 
 	// Define the state machine state functions with event data type
-	STATE_DECLARE(GarageDoor,	door_closed,		NoEventData)
-	STATE_DECLARE(GarageDoor,	door_open,			NoEventData)
+	STATE_DECLARE(GarageDoor,	door_closed,		GarageDoorData)
+	STATE_DECLARE(GarageDoor,	door_open,			GarageDoorData)
 	STATE_DECLARE(GarageDoor,	motor_up, 			GarageDoorData)
 	STATE_DECLARE(GarageDoor,	motor_down, 		GarageDoorData)
 	STATE_DECLARE(GarageDoor,	upward_stop, 		GarageDoorData)

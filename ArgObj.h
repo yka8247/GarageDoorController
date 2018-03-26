@@ -9,9 +9,12 @@
 #define CHANNELS_H_
 #include "GarageDoor.h"
 
-struct Channels {
+struct ArgObj {
 	int is_chid;
 	int gdc_chid;
+	uintptr_t ctrlHandle;
+	uintptr_t paHandle;
+	uintptr_t pbHandle;
 };
 
 #endif /* CHANNELS_H_ */
