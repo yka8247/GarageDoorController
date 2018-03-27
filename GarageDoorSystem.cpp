@@ -51,7 +51,7 @@ void* GarageDoorController(void* args) {
 	GarageDoor GD;
 	int coid;
 	int rcvid;
-	char message[100];
+	char message[50];
 	coid = ConnectAttach(0,getpid(),sendCh,0,0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
@@ -61,9 +61,9 @@ void* GarageDoorController(void* args) {
 	while (TRUE) {
 		// check if any message arrived
 		rcvid = MsgReceive (receiveCh, message, sizeof(message), NULL);
-//		if (rcvid) {
-//			std::cout << "<<GDC>>: " << message[0] << std::endl;
-//		}
+		if (rcvid) {
+			std::cout << "<<GDC>>: " << message[0] << std::endl;
+		}
 
 		/* send a response back to unlock the mutex */
 		std::string response = "<<GDC>> Received";
@@ -86,8 +86,8 @@ void* InputScannerController(void* args) {
 	/* Initialize variables */
 	int coid;
 	int rcvid;
-	char rmsg [100];
-	char message[100];
+	char rmsg [50];
+	char message[50];
 	coid = ConnectAttach(0,getpid(),sendCh,0,0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
@@ -97,9 +97,9 @@ void* InputScannerController(void* args) {
 	while (TRUE) {
 		/* check if any message arrived */
 		rcvid = MsgReceive(receiveCh, message, sizeof(message), NULL);
-//		if (rcvid) {
-//			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
-//		}
+		if (rcvid) {
+			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
+		}
 
 		/* send a response back to the sender */
 		std::string response = "InputScanner <<Received>>";
@@ -115,12 +115,14 @@ void* InputScannerController(void* args) {
 
 
 void* HardwareController(void* args){
+	static uint8_t prev_sig = 0;
+
 	/* Take argument from thread */
 	ArgObj* arg_obj = (ArgObj*)args;
 	/* Initialize message variables */
 	int coid;
 	char inp;
-	char rmsg[100];
+	char rmsg[50];
 	int chid = arg_obj->is_chid;
 	/* Hardware Initialization */
 	uintptr_t ctrlHandle = arg_obj->ctrlHandle;
@@ -135,7 +137,7 @@ void* HardwareController(void* args){
 	}
 
 	// Set control mode << 0001 0000 >> portA = input , portB = output
-	out8(ctrlHandle, 0x10);
+	out8(ctrlHandle, P5);
 
 	// Set Port B pin 8 to high to handle active low reset signal
 	out8(pbHandle, P8);
@@ -143,44 +145,44 @@ void* HardwareController(void* args){
 	while(TRUE) {
 		/* gather signal and check if it is same with previous signal */
 		uint8_t inp_sig = in8(paHandle);
-		uint8_t prev_sig;
-		if (prev_sig == inp_sig){
-			usleep(500);
-			continue;
-		}
-		/* Send detected signal to the message queue  */
-		if ( inp_sig & P1 ) {			// Full_Open Signal detected
-			inp = 'c';
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
+
+		/* process signal reading if previous singal is different then current signal */
+		if (prev_sig != inp_sig){
+			/* Send detected signal to the message queue  */
+			if ( inp_sig & P1 ) {			// Full_Open Signal detected
+				inp = 'c';
+				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
+					std::cout << "Failed to send a message :: " << inp << std::endl;
+				}
 			}
-		}
-		if ( inp_sig & P2 ) {			// Full_Close Signal detected
-			inp = 'd';
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
+			if ( inp_sig & P2 ) {			// Full_Close Signal detected
+				inp = 'd';
+				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
+					std::cout << "Failed to send a message :: " << inp << std::endl;
+				}
 			}
-		}
-		if ( inp_sig & P3 ) {			// IR_BEAM_BROKEN Signal detected
-			inp = 'i';
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
+			if ( inp_sig & P3 ) {			// IR_BEAM_BROKEN Signal detected
+				inp = 'i';
+				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
+					std::cout << "Failed to send a message :: " << inp << std::endl;
+				}
 			}
-		}
-		if ( inp_sig & P4 ) {			// OVER_CURRENT Signal detected
-			inp = 'o';
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
+			if ( inp_sig & P4 ) {			// OVER_CURRENT Signal detected
+				inp = 'o';
+				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
+					std::cout << "Failed to send a message :: " << inp << std::endl;
+				}
 			}
-		}
-		if ( inp_sig & P5 ) {			// REMOTE_PUSH_BUTTON Signal detected
-			inp = 'b';
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: Remote Push Button" << std::endl;
+			if ( inp_sig & P5 ) {			// REMOTE_PUSH_BUTTON Signal detected
+				inp = 'b';
+				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
+					std::cout << "Failed to send a message :: Remote Push Button" << std::endl;
+				}
 			}
 		}
 		/* set prev_sig to prevent redundant process */
 		prev_sig = inp_sig;
+		usleep(500);
 	}
 	return EXIT_SUCCESS;
 }
@@ -223,6 +225,8 @@ int main(int argc, char **argv) {
 	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&arg_obj);
 	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&arg_obj);
 	pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&arg_obj);
+
+	while(1){usleep(1);};
 	/* Join Threads */
 	pthread_join(InputScannerThread, NULL);
 	pthread_join(GarageDoorThread, NULL);
