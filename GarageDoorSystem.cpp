@@ -1,149 +1,32 @@
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <pthread.h>
 #include <unistd.h>
-#include <sys/neutrino.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/mman.h>
+#include <sys/neutrino.h>
+#include <hw/inout.h>
 #include <process.h>
 #include "GarageDoor.h"
-#include "Channels.h"
-
-
-void* InputScannerController(void* args) {
-	/* Initialize Message Channels */
-	Channels* chids = (Channels*)args;
-	int sendCh = chids->gdc_chid;
-	int receiveCh = chids->is_chid;
-	/* Initialize variables */
-	int coid;
-	int rcvid;
-	char rmsg [100];
-	char message[100];
-	coid = ConnectAttach(0,getpid(),sendCh,0,0);
-	if (coid == -1) {
-		std::cout << "Connection Failed" << std::endl;
-		return (FALSE);
-	}
-
-	while (TRUE) {
-		/* check if any message arrived */
-		rcvid = MsgReceive(receiveCh, message, sizeof(message), NULL);
-		if (rcvid) {
-			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
-		}
-		/* send a response back to the sender */
-		std::string response = "InputScanner <<Received>>";
-		MsgReply(rcvid, 1, &response, sizeof(response));
-
-		/* forward to controller */
-		if(MsgSend(coid, message, strlen(message) + 1, rmsg, sizeof(rmsg)) == -1) {
-			std::cout << "Could not send message :[ " << message << std::endl;
-		}
-		/* Terminate */
-		if(message[0] == 't' || message[0] == 'T'){
-			std::cout <<"Shut Down::<<InputScanner>>" << std::endl;
-			break;
-		}
-	}
-	return (FALSE);
-}
-
-
-void* HardwareController(void* args){
-	/* Initialize Message Channels */
-	Channels* chids = (Channels*)args;
-	int chid = chids->is_chid;
-	/* Initialize variables */
-	int coid;
-	char inp;
-	char rmsg[100];
-	coid = ConnectAttach(0, getpid(), chid, 0, 0);
-	if (coid == -1) {
-		std::cout << "Connection Failed" << std::endl;
-		return 0;
-	}
-	/* @TODO: Fill up necessary hardware initialization here */
-
-	while(TRUE) {
-		/* @TODO: Fill up necessary hardware invocation here */
-
-	}
-	return EXIT_SUCCESS;
-}
-
-
-
-void* KeyboardScannerController(void* args){
-	/* Initialize Message Channels */
-	Channels* chids = (Channels*)args;
-	int chid = chids->is_chid;
-	/* Initialize variables */
-	int coid;
-	char inp;
-	char rmsg[100];
-	coid = ConnectAttach(0, getpid(), chid, 0, 0);
-	if (coid == -1) {
-		std::cout << "Connection Failed" << std::endl;
-		return (FALSE);
-	}
-	/* Print instruction messages for the keyboard simulation */
-	std::cout << "Initializing Keyboard Interrupt Simulation" << std::endl;
-	std::cout << "Press 'b' or 'B' to simulate Push_Button Effect" << std::endl;
-	std::cout << "Press 'o' or 'O' to simulate OverCurrent Effect" << std::endl;
-	std::cout << "Press 'i' or 'I' to simulate Infrared Beam Triggered Effect" << std::endl;
-	std::cout << "Press 't' or 'T' to Terminate the Simulation" << std::endl;
-
-	while(TRUE) {
-		std::cin >> inp;
-		switch(inp) {
-		case 'B':
-		case 'b': {
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
-			}
-			break;
-		}
-		case 'I':
-		case 'i': {
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
-			}
-			break;
-		}
-		case 'O':
-		case 'o': {
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
-			}
-			break;
-		}
-		case 'T':
-		case 't': {
-			if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-				std::cout << "Failed to send a message :: " << inp << std::endl;
-			}
-			std::cout << "Shutting down keyboard scanner..." << std::endl;
-			return EXIT_SUCCESS;
-		}
-		default:
-			std::cout << "Invalid input" << std::endl;
-		}
-	}
-	return EXIT_SUCCESS;
-}
+#include "ArgObj.h"
+#include "Hardware.h"
 
 
 void* GarageDoorController(void* args) {
 	/* Initialize Message Channels */
-	Channels* chids = (Channels*)args;
-	int sendCh = chids->is_chid;
-	int receiveCh = chids->gdc_chid;
+	ArgObj* arg_obj = (ArgObj*)args;
+	int sendCh = arg_obj->is_chid;
+	int receiveCh = arg_obj->gdc_chid;
+	/* Initialize Hardware Handling port */
+	uintptr_t pbHandle = arg_obj->pbHandle;
 	/* Initialization */
 	GarageDoorData* data;
 	GarageDoor GD;
 	int coid;
 	int rcvid;
-	char message[100];
+	char message[50];
 	coid = ConnectAttach(0,getpid(),sendCh,0,0);
 	if (coid == -1) {
 		std::cout << "Connection Failed" << std::endl;
@@ -153,34 +36,139 @@ void* GarageDoorController(void* args) {
 	while (TRUE) {
 		// check if any message arrived
 		rcvid = MsgReceive (receiveCh, message, sizeof(message), NULL);
-		if (rcvid) {
-			std::cout << "<<GDC>>: " << message[0] << std::endl;
-		}
-		data = KeyboardEventGenerator(message[0]);
-		//@TODO: Replace KeyboardEventGenerator to HardwareEventGenerator
-		if (data->button_pushed) {
-			// print for testing purposes
-			std::cout << "Button Push Detected" << std::endl;
-			GD.Operate(data);
-		} else if(data->ir_interrupt) {
-			// print for testing purposes
-			std::cout << "IR Beam Interruption Detected" << std::endl;
-			GD.Halt(data);
-		} else if(data->overcurrent) {
-			// print for testing purposes
-			std::cout << "OverCurrent Detected" << std::endl;
-			GD.Halt(data);
-		}
+//		if (rcvid) {
+//			std::cout << "<<GDC>>: " << message[0] << std::endl;
+//		}
+
 		/* send a response back to unlock the mutex */
 		std::string response = "<<GDC>> Received";
 		MsgReply(rcvid, 1, &response, sizeof(response));
-		/* Terminate */
-		if(message[0] == 't' || message[0] == 'T'){
-			std::cout <<"Shut Down::<<GDC>>" << std::endl;
-			break;
+
+		// skip this action if 'x' is received
+		if (message[0] != 'x') {
+			/* generate data based on the received message */
+			data = BuildEvent(message[0], pbHandle);
+			/* invoke the state machine with the generated data */
+			if (data->button_pushed) {
+				// print for testing purposes
+				GD.Operate(data);
+			} else if(data->full_open_signal) {
+				// print for testing purposes
+				GD.Complete(data);
+			 }else if(data->full_close_signal) {
+				// print for testing purposes
+				GD.Complete(data);
+			} else if(data->ir_interrupt) {
+				// print for testing purposes
+				GD.Halt(data);
+			} else if(data->overcurrent) {
+				// print for testing purposes
+				GD.Halt(data);
+			}
 		}
 	}
 	return (FALSE);
+}
+
+
+void* InputScannerController(void* args) {
+	/* Initialize Message Channels */
+	ArgObj* arg_obj = (ArgObj*)args;
+	int sendCh = arg_obj->gdc_chid;
+	int receiveCh = arg_obj->is_chid;
+	/* Initialize variables */
+	int coid;
+	int rcvid;
+	char rmsg [50];
+	char message[50];
+	coid = ConnectAttach(0,getpid(),sendCh,0,0);
+	if (coid == -1) {
+		std::cout << "Connection Failed" << std::endl;
+		return (FALSE);
+	}
+
+	while (TRUE) {
+		/* check if any message arrived */
+		rcvid = MsgReceive(receiveCh, message, sizeof(message), NULL);
+//		if (rcvid) {
+//			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
+//		}
+
+		/* send a response back to the sender */
+		std::string response = "InputScanner <<Received>>";
+		MsgReply(rcvid, 1, &response, sizeof(response));
+
+		/* forward the message to controller */
+		if(MsgSend(coid, message, strlen(message) + 1, rmsg, sizeof(rmsg)) == -1) {
+			std::cout << "Could not send message :[ " << message << std::endl;
+		}
+	}
+	return (FALSE);
+}
+
+
+void* HardwareController(void* args){
+	/* Take argument from thread */
+	ArgObj* arg_obj = (ArgObj*)args;
+	/* declare temporary signal variable */
+	static uint8_t prev_sig = 0;
+	/* Initialize message variables */
+	int coid;
+	char in_char;
+	char rmsg[50];
+	int chid = arg_obj->is_chid;
+	/* Hardware Initialization */
+	uintptr_t ctrlHandle = arg_obj->ctrlHandle;
+	uintptr_t paHandle = arg_obj->paHandle;
+	uintptr_t pbHandle = arg_obj->pbHandle;
+
+	/* Attach the message channel */
+	coid = ConnectAttach(0, getpid(), chid, 0, 0);
+	if (coid == -1) {
+		std::cout << "Connection Failed" << std::endl;
+		return 0;
+	}
+
+	// Set control mode << 0001 0000 >> portA = input , portB = output
+	out8(ctrlHandle, P5);
+
+	// Set Port B pin 8 to high to handle active low reset signal
+	out8(pbHandle, P8);
+
+	while(TRUE) {
+		/* gather signal and check if it is same with previous signal */
+		uint8_t inp_sig = in8(paHandle);
+
+		/* process signal reading if previous singal is different then current signal */
+		if (prev_sig != inp_sig){
+			/* Send detected signal to the message queue  */
+			if ( (inp_sig & P5) && ((prev_sig & P5) == FALSE) ) {				// REMOTE_PUSH_BUTTON Signal detected
+				in_char = 'p';
+			}
+			else if ( (inp_sig & P4)  && ((prev_sig & P4) == FALSE) ) {			// OVER_CURRENT Signal detected
+				in_char = 'v';
+			}
+			else if ( (inp_sig & P3) && ((prev_sig & P3) == FALSE) ) {			// IR_BEAM_BROKEN Signal detected
+				in_char = 'i';
+			}
+			else if ( (inp_sig & P2) && ((prev_sig & P2) == FALSE) ) {			// Full_Close Signal detected
+				in_char = 'c';
+			}
+			else if ( (inp_sig & P1) && ((prev_sig & P1) == FALSE) ) {			// Full_Open Signal detected
+				in_char = 'o';
+			} else {
+				// otherwise, send a error message
+				in_char = 'x';
+			}
+			if (MsgSend(coid, &in_char, strlen(&in_char) + 1, rmsg, sizeof(rmsg)) == -1) {
+				std::cout << "Failed to send a message :: " << in_char << std::endl;
+			}
+		}
+		/* set prev_sig to prevent redundant process */
+		prev_sig = inp_sig;
+		usleep(500);
+	}
+	return EXIT_SUCCESS;
 }
 
 
@@ -188,38 +176,46 @@ int main(int argc, char **argv) {
 	/* Get Full Permission over RTOS */
 	if ( ThreadCtl(_NTO_TCTL_IO, NULL) == -1) {
 		std::perror("Failed to get I/O access permission");
-		return TRUE;
+		return 1;
 	}
-	/* Hardware Initialization */
-	//
-	//
-	//
+	/* Map Hardware ports */
+	uintptr_t ctrlHandle = mmap_device_io(IO_PORT_SIZE, CTRL_ADDRESS);
+	uintptr_t paHandle = mmap_device_io(IO_PORT_SIZE, PORT_A_ADDRESS);
+	uintptr_t pbHandle = mmap_device_io(IO_PORT_SIZE, PORT_B_ADDRESS);
+	/* check for successful hardware initialization */
+	if(ctrlHandle == MAP_DEVICE_FAILED) {
+		std::perror("Failed to map CTRL register");
+		return (0);
+	}
+	if(paHandle == MAP_DEVICE_FAILED) {
+		std::perror("Failed to map PORT_A register");
+		return (0);
+	}
+	if(pbHandle == MAP_DEVICE_FAILED) {
+		std::perror("Failed to map PORT_B register");
+		return (0);
+	}
 	/* Prepare thread creation*/
-	pthread_t keyboardScannerThread;
-	//@TODO: implement Hardware Thread
-	//pthread_t HardwareScannerThread;
 	pthread_t InputScannerThread;
 	pthread_t GarageDoorThread;
+	pthread_t HardwareScannerThread;
 	/* Prepare channel structure creation */
 	int gdc_chid = ChannelCreate(0);
 	int is_chid = ChannelCreate(0);
-	Channels channels = { is_chid, gdc_chid };
+	ArgObj arg_obj = { is_chid, gdc_chid, ctrlHandle, paHandle, pbHandle };
 	/* Initialization complete -> Move on to runtime environment */
-	std::cout << "Initializing the Garage Door Simulation" << std::endl;
+	std::cout << "Initializing the Garage Door System" << std::endl;
 	/* Call Threads */
-	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&channels);
-	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&channels);
-	pthread_create(&keyboardScannerThread, NULL, &KeyboardScannerController, (void*)&channels);
-	//@TODO: implement Hardware Thread
-	//pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&channels);
+	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&arg_obj);
+	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&arg_obj);
+	pthread_create(&HardwareScannerThread, NULL, &HardwareController, (void*)&arg_obj);
+
+	while(1){usleep(1);};
 	/* Join Threads */
 	pthread_join(InputScannerThread, NULL);
 	pthread_join(GarageDoorThread, NULL);
-	pthread_join(keyboardScannerThread, NULL);
-	//@TODO: implement Hardware Thread
-	//pthread_join(HardwareScannerThread, NULL);
+	pthread_join(HardwareScannerThread, NULL);
 
-
-	std::cout << "Terminating the Garage Door Simulation" << std::endl;
+	std::cout << "Terminating the Garage Door System" << std::endl;
 	return EXIT_SUCCESS;
 }
