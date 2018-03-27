@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
 	int is_chid = ChannelCreate(0);
 	ArgObj arg_obj = { is_chid, gdc_chid, ctrlHandle, paHandle, pbHandle };
 	/* Initialization complete -> Move on to runtime environment */
-	std::cout << "Initializing the Garage Door Simulation" << std::endl;
+	std::cout << "Initializing the Garage Door System" << std::endl;
 	/* Call Threads */
 	pthread_create(&InputScannerThread, NULL, &InputScannerController, (void*)&arg_obj);
 	pthread_create(&GarageDoorThread, NULL, &GarageDoorController, (void*)&arg_obj);
@@ -216,6 +216,6 @@ int main(int argc, char **argv) {
 	pthread_join(GarageDoorThread, NULL);
 	pthread_join(HardwareScannerThread, NULL);
 
-	std::cout << "Terminating the Garage Door Simulation" << std::endl;
+	std::cout << "Terminating the Garage Door System" << std::endl;
 	return EXIT_SUCCESS;
 }
