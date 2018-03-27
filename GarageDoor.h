@@ -21,8 +21,7 @@ public:
 	uintptr_t pbHandle;
 };
 
-GarageDoorData* EventGenerator(char, uintptr_t);
-
+GarageDoorData* BuildEvent(char, uintptr_t);
 
 class GarageDoor : public StateMachine {
 public:

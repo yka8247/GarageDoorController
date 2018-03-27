@@ -13,10 +13,10 @@
 #include "Hardware.h"
 
 
-GarageDoorData* EventGenerator(char inp, uintptr_t pbHandle) {
+GarageDoorData* BuildEvent(char inp, uintptr_t pbHandle) {
 	GarageDoorData* data = new GarageDoorData();
 	switch(inp) {
-	case 'b':{
+	case 'p':{
 		data->button_pushed = TRUE;
 		break;
 	}
@@ -24,15 +24,15 @@ GarageDoorData* EventGenerator(char inp, uintptr_t pbHandle) {
 		data->ir_interrupt = TRUE;
 		break;
 	}
-	case 'o': {
+	case 'v': {
 		data->overcurrent = TRUE;
 		break;
 	}
-	case 'c': {
+	case 'o': {
 		data->full_open_signal = TRUE;
 		break;
 	}
-	case 'd': {
+	case 'c': {
 		data->full_close_signal = TRUE;
 		break;
 	}
@@ -74,8 +74,8 @@ void GarageDoor::Complete(GarageDoorData* data) {
 		TRANSITION_MAP_ENTRY(ST_DOOR_OPEN)					// ST_DOOR_OPEN
 		TRANSITION_MAP_ENTRY(ST_DOOR_OPEN)					// ST_MOTOR_UP
 		TRANSITION_MAP_ENTRY(ST_DOOR_CLOSED)				// ST_MOTOR_DOWN
-		TRANSITION_MAP_ENTRY(ST_MOTOR_UP)					// ST_UPWARD_STOP
-		TRANSITION_MAP_ENTRY(ST_MOTOR_DOWN)					// ST_DOWN_STOP
+		TRANSITION_MAP_ENTRY(EVENT_IGNORED)					// ST_UPWARD_STOP
+		TRANSITION_MAP_ENTRY(EVENT_IGNORED)					// ST_DOWN_STOP
 	END_TRANSITION_MAP(data)
 }
 
@@ -94,15 +94,18 @@ void GarageDoor::Halt(GarageDoorData* data) {
 
 
 STATE_DEFINE(GarageDoor, door_closed, GarageDoorData) {
+	std::cout << "Garage Status :: CLOSED" << std::endl;
 	// set the state flag
 	full_close = TRUE;
+	// set the hardware
 	uintptr_t pbHandle = data->pbHandle;
 	out8(pbHandle, P8);
-	std::cout << "Garage Status :: CLOSED" << std::endl;
+
 }
 
 
 STATE_DEFINE(GarageDoor, door_open, GarageDoorData) {
+	std::cout << "Garage Status :: OPEN" << std::endl;
 	// set the state flag
 	full_open = TRUE;
 	ir_beam_enabled = TRUE;
@@ -110,38 +113,40 @@ STATE_DEFINE(GarageDoor, door_open, GarageDoorData) {
 	uintptr_t pbHandle = data->pbHandle;
 	int output = (P3|P8);
 	out8(pbHandle, output);
-	std::cout << "Garage Status :: OPEN" << std::endl;
 }
 
 
 STATE_DEFINE(GarageDoor, motor_up, GarageDoorData) {
 	std::cout << "Garage Status :: MOTOR UP" << std::endl;
+	// set the state flag
 	full_close = FALSE;
-	uintptr_t pbHandle = data->pbHandle;
-
 	// set pin 1 (motor up) to high along with pin 8 for active high reset
+	uintptr_t pbHandle = data->pbHandle;
 	out8(pbHandle, (P1|P8));
+	//std::cout << "current state: " << (char)this->GetCurrentState() << std::endl;
 }
 
 
 STATE_DEFINE(GarageDoor, motor_down, GarageDoorData) {
 	std::cout << "Garage Status :: MOTOR DOWN" << std::endl;
+	// set the flag
 	full_open = FALSE;
-	uintptr_t pbHandle = data->pbHandle;
-
 	// set pin 2 (motor down) to high along with pin 8 for active high reset
+	uintptr_t pbHandle = data->pbHandle;
 	out8(pbHandle, (P2|P3|P8));
 }
 
 
 STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
-	uintptr_t pbHandle = data->pbHandle;
 	std::cout << "Garage Status :: UPWARD STOP" << std::endl;
+	// set the hardware
+	uintptr_t pbHandle = data->pbHandle;
 	out8(pbHandle, P8);
 }
 
 STATE_DEFINE(GarageDoor, downward_stop, GarageDoorData) {
 	uintptr_t pbHandle = data->pbHandle;
+	// set the hardware
 	std::cout << "Garage Status :: DOWNWARD STOP" << std::endl;
 	out8(pbHandle, (P3|P8));
 }

@@ -14,31 +14,6 @@
 #include "Hardware.h"
 
 
-void GD_Event(GarageDoor GD, GarageDoorData* data){
-	if (data->button_pushed) {
-		// print for testing purposes
-		// std::cout << "Button Push Detected" << std::endl;
-		GD.Operate(data);
-	} else if(data->full_open_signal) {
-		// print for testing purposes
-		// std::cout << "Full Open Signal Detected" << std::endl;
-		GD.Complete(data);
-	 }else if(data->full_close_signal) {
-		// print for testing purposes
-		// std::cout << "Full Close Signal Detected" << std::endl;
-		GD.Complete(data);
-	} else if(data->ir_interrupt) {
-		// print for testing purposes
-		// std::cout << "IR Beam Interruption Detected" << std::endl;
-		GD.Halt(data);
-	} else if(data->overcurrent) {
-		// print for testing purposes
-		// std::cout << "OverCurrent Detected" << std::endl;
-		GD.Halt(data);
-	}
-}
-
-
 void* GarageDoorController(void* args) {
 	/* Initialize Message Channels */
 	ArgObj* arg_obj = (ArgObj*)args;
@@ -61,18 +36,36 @@ void* GarageDoorController(void* args) {
 	while (TRUE) {
 		// check if any message arrived
 		rcvid = MsgReceive (receiveCh, message, sizeof(message), NULL);
-		if (rcvid) {
-			std::cout << "<<GDC>>: " << message[0] << std::endl;
-		}
+//		if (rcvid) {
+//			std::cout << "<<GDC>>: " << message[0] << std::endl;
+//		}
 
 		/* send a response back to unlock the mutex */
 		std::string response = "<<GDC>> Received";
 		MsgReply(rcvid, 1, &response, sizeof(response));
 
-		/* generate data based on the received message */
-		data = EventGenerator(message[0], pbHandle);
-		/* invoke the state machine with the generated data */
-		GD_Event(GD, data);
+		// skip this action if 'x' is received
+		if (message[0] != 'x') {
+			/* generate data based on the received message */
+			data = BuildEvent(message[0], pbHandle);
+			/* invoke the state machine with the generated data */
+			if (data->button_pushed) {
+				// print for testing purposes
+				GD.Operate(data);
+			} else if(data->full_open_signal) {
+				// print for testing purposes
+				GD.Complete(data);
+			 }else if(data->full_close_signal) {
+				// print for testing purposes
+				GD.Complete(data);
+			} else if(data->ir_interrupt) {
+				// print for testing purposes
+				GD.Halt(data);
+			} else if(data->overcurrent) {
+				// print for testing purposes
+				GD.Halt(data);
+			}
+		}
 	}
 	return (FALSE);
 }
@@ -97,9 +90,9 @@ void* InputScannerController(void* args) {
 	while (TRUE) {
 		/* check if any message arrived */
 		rcvid = MsgReceive(receiveCh, message, sizeof(message), NULL);
-		if (rcvid) {
-			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
-		}
+//		if (rcvid) {
+//			std::cout << "<<Input Scanner>>: " << message[0] << std::endl;
+//		}
 
 		/* send a response back to the sender */
 		std::string response = "InputScanner <<Received>>";
@@ -115,13 +108,13 @@ void* InputScannerController(void* args) {
 
 
 void* HardwareController(void* args){
-	static uint8_t prev_sig = 0;
-
 	/* Take argument from thread */
 	ArgObj* arg_obj = (ArgObj*)args;
+	/* declare temporary signal variable */
+	static uint8_t prev_sig = 0;
 	/* Initialize message variables */
 	int coid;
-	char inp;
+	char in_char;
 	char rmsg[50];
 	int chid = arg_obj->is_chid;
 	/* Hardware Initialization */
@@ -149,35 +142,26 @@ void* HardwareController(void* args){
 		/* process signal reading if previous singal is different then current signal */
 		if (prev_sig != inp_sig){
 			/* Send detected signal to the message queue  */
-			if ( inp_sig & P1 ) {			// Full_Open Signal detected
-				inp = 'c';
-				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-					std::cout << "Failed to send a message :: " << inp << std::endl;
-				}
+			if ( (inp_sig & P5) && ((prev_sig & P5) == FALSE) ) {				// REMOTE_PUSH_BUTTON Signal detected
+				in_char = 'p';
 			}
-			if ( inp_sig & P2 ) {			// Full_Close Signal detected
-				inp = 'd';
-				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-					std::cout << "Failed to send a message :: " << inp << std::endl;
-				}
+			else if ( (inp_sig & P4)  && ((prev_sig & P4) == FALSE) ) {			// OVER_CURRENT Signal detected
+				in_char = 'v';
 			}
-			if ( inp_sig & P3 ) {			// IR_BEAM_BROKEN Signal detected
-				inp = 'i';
-				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-					std::cout << "Failed to send a message :: " << inp << std::endl;
-				}
+			else if ( (inp_sig & P3) && ((prev_sig & P3) == FALSE) ) {			// IR_BEAM_BROKEN Signal detected
+				in_char = 'i';
 			}
-			if ( inp_sig & P4 ) {			// OVER_CURRENT Signal detected
-				inp = 'o';
-				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-					std::cout << "Failed to send a message :: " << inp << std::endl;
-				}
+			else if ( (inp_sig & P2) && ((prev_sig & P2) == FALSE) ) {			// Full_Close Signal detected
+				in_char = 'c';
 			}
-			if ( inp_sig & P5 ) {			// REMOTE_PUSH_BUTTON Signal detected
-				inp = 'b';
-				if(MsgSend(coid, &inp, strlen(&inp) + 1, rmsg, sizeof(rmsg)) == -1) {
-					std::cout << "Failed to send a message :: Remote Push Button" << std::endl;
-				}
+			else if ( (inp_sig & P1) && ((prev_sig & P1) == FALSE) ) {			// Full_Open Signal detected
+				in_char = 'o';
+			} else {
+				// otherwise, send a error message
+				in_char = 'x';
+			}
+			if (MsgSend(coid, &in_char, strlen(&in_char) + 1, rmsg, sizeof(rmsg)) == -1) {
+				std::cout << "Failed to send a message :: " << in_char << std::endl;
 			}
 		}
 		/* set prev_sig to prevent redundant process */
