@@ -139,6 +139,13 @@ STATE_DEFINE(GarageDoor, motor_down, GarageDoorData) {
 
 STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
 	std::cout << "Garage Status :: UPWARD STOP" << std::endl;
+	if (data->button_pushed) {
+		std::cout << "\tPAUSE :: Button Pushed" << std::endl;
+	}
+	if (data->overcurrent) {
+		std::cout << "\t HALT :: OverCurrent Detected" << std::endl;
+	}
+
 	// set the hardware
 	uintptr_t pbHandle = data->pbHandle;
 	out8(pbHandle, P8);
@@ -146,6 +153,15 @@ STATE_DEFINE(GarageDoor, upward_stop, GarageDoorData) {
 
 STATE_DEFINE(GarageDoor, downward_stop, GarageDoorData) {
 	uintptr_t pbHandle = data->pbHandle;
+	if (data->button_pushed) {
+		std::cout << "PAUSE :: Button Pushed" << std::endl;
+	}
+	if (data->overcurrent) {
+		std::cout << "\t HALT :: OverCurrent Detected" << std::endl;
+	}
+	if (data->ir_interrupt) {
+		std::cout << "\t HALT :: Infrared Beam Interruption Detected" << std::endl;
+	}
 	// set the hardware
 	std::cout << "Garage Status :: DOWNWARD STOP" << std::endl;
 	out8(pbHandle, (P3|P8));
